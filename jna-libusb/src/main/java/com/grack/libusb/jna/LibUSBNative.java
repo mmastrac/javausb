@@ -1,11 +1,11 @@
-package com.grack.libusb;
+package com.grack.libusb.jna;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
-interface LibUSBNative extends Library {
+public interface LibUSBNative extends Library {
 	LibUSBNative INSTANCE = (LibUSBNative) Native.loadLibrary("usb-1.0.0", LibUSBNative.class);
 
 	// int LIBUSB_CALL libusb_init(libusb_context **ctx);

@@ -1,26 +1,27 @@
-package com.grack.libusb;
+package com.grack.libusb.jna;
 
 import java.util.List;
-
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
 import com.google.common.collect.ImmutableList;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
 public class libusb_config_descriptor extends Structure {
+	public static class ByReference extends libusb_config_descriptor implements Structure.ByReference {
+	}
+
 	public libusb_config_descriptor() {
 	}
-	
+
 	public libusb_config_descriptor(Pointer p) {
 		super(p);
 		read();
 	}
-	
+
 	@Override
 	protected List<String> getFieldOrder() {
 		return ImmutableList.of("bLength", "bDescriptorType", "wTotalLength", "bNumInterfaces", "bConfigurationValue", "iConfiguration",
-				"bmAttributes", "MaxPower", "interfaces", "extra", "extra_length");
+				"bmAttributes", "bMaxPower", "interfaces", "extra", "extra_length");
 	}
 
 	public byte bLength;
@@ -30,13 +31,8 @@ public class libusb_config_descriptor extends Structure {
 	public byte bConfigurationValue;
 	public byte iConfiguration;
 	public byte bmAttributes;
-	public byte MaxPower;
-	public Pointer interfaces; // libusb_interface, length = bNumInterfaces
+	public byte bMaxPower;
+	public libusb_interface.ByReference interfaces; // libusb_interface, length = bNumInterfaces
 	public Pointer extra; // char*, length = extra_length
 	public int extra_length;
-	
-	@Override
-	public String toString() {
-		return ReflectionToStringBuilder.toString(this);
-	}
 }

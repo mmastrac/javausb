@@ -1,18 +1,40 @@
 package com.grack.libusb;
 
-import java.util.Iterator;
+import java.io.Closeable;
+import java.util.logging.Logger;
 
 import com.sun.jna.Pointer;
 
-public class LibUSBOpenDevice implements AutoCloseable {
+public class LibUSBOpenDevice implements AutoCloseable, Closeable {
 	private LibUSBDevice device;
-	private Pointer handle;
-	private LibUSB usb;
+	Pointer handle;
+	LibUSB usb;
+	private LibUSBFinalizerReference finalizer;
+
+	private static final Logger logger = Logger.getLogger(LibUSBDevice.class.getName());
 
 	public LibUSBOpenDevice(LibUSB usb, LibUSBDevice device, Pointer handle) {
 		this.usb = usb;
 		this.device = device;
 		this.handle = handle;
+		
+		finalizer = usb.trackFinalizer(this, new LibUSBOpenDeviceFinalizer(usb, handle));
+	}
+
+	private static class LibUSBOpenDeviceFinalizer implements LibUSBFinalizer {
+		private LibUSB usb;
+		private Pointer handle;
+
+		public LibUSBOpenDeviceFinalizer(LibUSB usb, Pointer handle) {
+			this.handle = handle;
+			this.usb = usb;
+		}
+
+		@Override
+		public void cleanup() {
+			logger.info("Cleanup: open device");
+			usb.closeDevice(handle);
+		}
 	}
 
 	public String manufacturer() throws LibUSBException {
@@ -38,16 +60,11 @@ public class LibUSBOpenDevice implements AutoCloseable {
 
 	@Override
 	public synchronized void close() {
-		if (handle == null)
-			return;
-		usb.closeDevice(handle);
-		handle = null;
-		usb = null;
-		device = null;
-	}
-	
-	@Override
-	protected void finalize() throws Throwable {
-		close();
+		if (finalizer != null) {
+			usb.forceFinalization(finalizer);
+			finalizer = null;
+			handle = null;
+			usb = null;
+		}
 	}
 }

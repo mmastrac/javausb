@@ -1,23 +1,28 @@
-package com.grack.libusb;
+package com.grack.libusb.jna;
 
 import java.util.List;
 
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-
 import com.google.common.collect.ImmutableList;
+import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 
 public class libusb_device_descriptor extends Structure {
+	public static class ByReference extends libusb_device_descriptor implements Structure.ByReference {
+	}
+
 	public libusb_device_descriptor() {
 	}
-	
+
+	public libusb_device_descriptor(Pointer p) {
+		super(p);
+		read();
+	}
+
 	@Override
 	protected List<String> getFieldOrder() {
-		return ImmutableList.of("bLength", "bDescriptorType", "bcdUSB",
-				"bDeviceClass", "bDeviceSubClass", "bDeviceProtocol",
-				"bMaxPacketSize0", "idVendor", "idProduct", "bcdDevice",
-				"iManufacturer", "iProduct", "iSerialNumber",
-				"bNumConfigurations");
+		return ImmutableList
+				.of("bLength", "bDescriptorType", "bcdUSB", "bDeviceClass", "bDeviceSubClass", "bDeviceProtocol", "bMaxPacketSize0",
+						"idVendor", "idProduct", "bcdDevice", "iManufacturer", "iProduct", "iSerialNumber", "bNumConfigurations");
 	}
 
 	public byte bLength;
@@ -34,9 +39,4 @@ public class libusb_device_descriptor extends Structure {
 	public byte iProduct;
 	public byte iSerialNumber;
 	public byte bNumConfigurations;
-	
-	@Override
-	public String toString() {
-		return ReflectionToStringBuilder.toString(this);
-	}
 }
