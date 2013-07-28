@@ -1,4 +1,4 @@
-package com.grack.libusb;
+package com.grack.javausb;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,32 +8,32 @@ import java.util.logging.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.grack.libusb.jna.LibUSBNative;
-import com.grack.libusb.jna.libusb_config_descriptor;
-import com.grack.libusb.jna.libusb_device_descriptor;
+import com.grack.javausb.jna.LibUSBXNative;
+import com.grack.javausb.jna.libusb_config_descriptor;
+import com.grack.javausb.jna.libusb_device_descriptor;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
-public class LibUSB {
-	private static final LibUSBNative USB = LibUSBNative.INSTANCE;
+public class USB {
+	private static final LibUSBXNative USB = LibUSBXNative.INSTANCE;
 	private Pointer ctx;
-	private LibUSBFinalizationThread finalizationThread;
+	private FinalizationThread finalizationThread;
 
-	private static final Logger logger = Logger.getLogger(LibUSB.class.getName());
+	private static final Logger logger = Logger.getLogger(USB.class.getName());
 	
-	public LibUSB() throws LibUSBException {
+	public USB() throws USBException {
 		this.ctx = openLibrary();
 		// USB.libusb_set_debug(ctx, 4);
 		
-		finalizationThread = new LibUSBFinalizationThread();
+		finalizationThread = new FinalizationThread();
 		finalizationThread.start();
 		finalizationThread.track(this, new LibUSBCleanupFinalizer(openLibrary()));
 		
 		logger.info("Initialized LibUSB JNA wrapper");
 	}
 
-	private static class LibUSBCleanupFinalizer implements LibUSBFinalizer {
+	private static class LibUSBCleanupFinalizer implements Finalizer {
 		private Pointer ctx;
 
 		public LibUSBCleanupFinalizer(Pointer ctx) {
@@ -48,21 +48,21 @@ public class LibUSB {
 		}
 	}
 
-	private Pointer openLibrary() throws LibUSBException {
+	private Pointer openLibrary() throws USBException {
 		PointerByReference ctxPtr = new PointerByReference();
 		nativeCall(USB.libusb_init(ctxPtr));
 		return ctxPtr.getValue();
 	}
 
-	private static int nativeCall(int response) throws LibUSBException {
+	private static int nativeCall(int response) throws USBException {
 		if (response < 0)
-			throw new LibUSBException(response);
+			throw new USBException(response);
 		return response;
 	}
 
-	public Iterable<LibUSBDevice> devices() {
-		return new Iterable<LibUSBDevice>() {
-			public Iterator<LibUSBDevice> iterator() {
+	public Iterable<USBDevice> devices() {
+		return new Iterable<USBDevice>() {
+			public Iterator<USBDevice> iterator() {
 				// libusb_device ***list
 				final PointerByReference list = new PointerByReference();
 				final int count = USB.libusb_get_device_list(ctx, list);
@@ -70,16 +70,16 @@ public class LibUSB {
 				Pointer[] pointers = list.getValue().getPointerArray(0, count);
 
 				// Eagerly transform this list
-				ArrayList<LibUSBDevice> descriptors = Lists.newArrayList(Iterables.transform(Arrays.asList(pointers),
-						new Function<Pointer, LibUSBDevice>() {
-							public LibUSBDevice apply(Pointer dev) {
+				ArrayList<USBDevice> descriptors = Lists.newArrayList(Iterables.transform(Arrays.asList(pointers),
+						new Function<Pointer, USBDevice>() {
+							public USBDevice apply(Pointer dev) {
 								libusb_device_descriptor[] desc = new libusb_device_descriptor[1];
 								try {
 									nativeCall(USB.libusb_get_device_descriptor(dev, desc));
-								} catch (LibUSBException e) {
-									throw new LibUSBRuntimeException(e);
+								} catch (USBException e) {
+									throw new USBRuntimeException(e);
 								}
-								return new LibUSBDevice(LibUSB.this, desc[0], dev);
+								return new USBDevice(USB.this, desc[0], dev);
 							}
 						}));
 
@@ -91,13 +91,13 @@ public class LibUSB {
 		};
 	}
 
-	String getStringDescriptionAscii(Pointer dev, byte index) throws LibUSBException {
+	String getStringDescriptionAscii(Pointer dev, byte index) throws USBException {
 		byte[] s = new byte[4096];
 		nativeCall(USB.libusb_get_string_descriptor_ascii(dev, index, s, s.length));
 		return Native.toString(s, "ASCII");
 	}
 
-	Pointer openDevice(Pointer dev) throws LibUSBException {
+	Pointer openDevice(Pointer dev) throws USBException {
 		PointerByReference handle = new PointerByReference();
 		nativeCall(USB.libusb_open(dev, handle));
 		return handle.getValue();
@@ -111,18 +111,18 @@ public class LibUSB {
 		USB.libusb_unref_device(dev);
 	}
 
-	libusb_config_descriptor getConfigDescriptor(Pointer dev, int index) throws LibUSBException {
+	libusb_config_descriptor getConfigDescriptor(Pointer dev, int index) throws USBException {
 		PointerByReference config = new PointerByReference();
 		nativeCall(USB.libusb_get_config_descriptor(dev, index, config));
 		libusb_config_descriptor descriptor = new libusb_config_descriptor(config.getValue());
 		return descriptor;
 	}
 
-	public LibUSBFinalizerReference trackFinalizer(Object referent, LibUSBFinalizer finalizer) {
+	public FinalizerReference trackFinalizer(Object referent, Finalizer finalizer) {
 		return finalizationThread.track(referent, finalizer);
 	}
 
-	public void forceFinalization(LibUSBFinalizerReference finalizer) {
+	public void forceFinalization(FinalizerReference finalizer) {
 		finalizationThread.force(finalizer);
 	}
 

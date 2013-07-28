@@ -1,22 +1,22 @@
-package com.grack.libusb;
+package com.grack.javausb;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
 import com.google.common.collect.Lists;
-import com.grack.libusb.jna.libusb_config_descriptor;
-import com.grack.libusb.jna.libusb_device_descriptor;
+import com.grack.javausb.jna.libusb_config_descriptor;
+import com.grack.javausb.jna.libusb_device_descriptor;
 import com.sun.jna.Pointer;
 
-public class LibUSBDevice {
-	Pointer dev;
-	LibUSB usb;
+public class USBDevice {
+	private Pointer dev;
+	private USB usb;
 	libusb_device_descriptor descriptor;
 
-	private static final Logger logger = Logger.getLogger(LibUSBDevice.class.getName());
+	private static final Logger logger = Logger.getLogger(USBDevice.class.getName());
 
-	LibUSBDevice(LibUSB usb, libusb_device_descriptor descriptor, Pointer dev) {
+	USBDevice(USB usb, libusb_device_descriptor descriptor, Pointer dev) {
 		this.usb = usb;
 		this.descriptor = descriptor;
 		this.dev = dev;
@@ -24,11 +24,11 @@ public class LibUSBDevice {
 		usb.trackFinalizer(this, new LibUSBDeviceFinalizer(usb, dev));
 	}
 
-	private static class LibUSBDeviceFinalizer implements LibUSBFinalizer {
-		private LibUSB usb;
+	private static class LibUSBDeviceFinalizer implements Finalizer {
+		private USB usb;
 		private Pointer dev;
 
-		public LibUSBDeviceFinalizer(LibUSB usb, Pointer dev) {
+		public LibUSBDeviceFinalizer(USB usb, Pointer dev) {
 			this.usb = usb;
 			this.dev = dev;
 		}
@@ -55,21 +55,21 @@ public class LibUSBDevice {
 	/**
 	 * Lists device configurations by sending requests to the device for each
 	 * individual descriptor. Each call to configurations returns a brand new
-	 * set of {@link LibUSBConfiguration} objects.
+	 * set of {@link USBConfiguration} objects.
 	 */
-	public Iterable<LibUSBConfiguration> configurations() {
-		return new Iterable<LibUSBConfiguration>() {
+	public Iterable<USBConfiguration> configurations() {
+		return new Iterable<USBConfiguration>() {
 			@Override
-			public Iterator<LibUSBConfiguration> iterator() {
-				List<LibUSBConfiguration> configs = Lists.newArrayList();
+			public Iterator<USBConfiguration> iterator() {
+				List<USBConfiguration> configs = Lists.newArrayList();
 				try {
 					for (int i = 0; i < descriptor.bNumConfigurations; i++) {
 						libusb_config_descriptor descriptor;
 						descriptor = usb.getConfigDescriptor(dev, i);
-						configs.add(new LibUSBConfiguration(LibUSBDevice.this, descriptor));
+						configs.add(new USBConfiguration(usb, USBDevice.this, descriptor));
 					}
-				} catch (LibUSBException e) {
-					throw new LibUSBRuntimeException(e);
+				} catch (USBException e) {
+					throw new USBRuntimeException(e);
 				}
 
 				return configs.iterator();
@@ -80,8 +80,8 @@ public class LibUSBDevice {
 	/**
 	 * Opens a device.
 	 */
-	public LibUSBOpenDevice open() throws LibUSBException {
-		return new LibUSBOpenDevice(usb, this, usb.openDevice(dev));
+	public USBOpenDevice open() throws USBException {
+		return new USBOpenDevice(usb, this, usb.openDevice(dev));
 	}
 
 	@Override

@@ -1,19 +1,19 @@
-package com.grack.libusb;
+package com.grack.javausb;
 
 import java.io.Closeable;
 import java.util.logging.Logger;
 
 import com.sun.jna.Pointer;
 
-public class LibUSBOpenDevice implements AutoCloseable, Closeable {
-	private LibUSBDevice device;
-	Pointer handle;
-	LibUSB usb;
-	private LibUSBFinalizerReference finalizer;
+public class USBOpenDevice implements AutoCloseable, Closeable {
+	private USBDevice device;
+	private Pointer handle;
+	private USB usb;
+	private FinalizerReference finalizer;
 
-	private static final Logger logger = Logger.getLogger(LibUSBDevice.class.getName());
+	private static final Logger logger = Logger.getLogger(USBDevice.class.getName());
 
-	public LibUSBOpenDevice(LibUSB usb, LibUSBDevice device, Pointer handle) {
+	public USBOpenDevice(USB usb, USBDevice device, Pointer handle) {
 		this.usb = usb;
 		this.device = device;
 		this.handle = handle;
@@ -21,11 +21,11 @@ public class LibUSBOpenDevice implements AutoCloseable, Closeable {
 		finalizer = usb.trackFinalizer(this, new LibUSBOpenDeviceFinalizer(usb, handle));
 	}
 
-	private static class LibUSBOpenDeviceFinalizer implements LibUSBFinalizer {
-		private LibUSB usb;
+	private static class LibUSBOpenDeviceFinalizer implements Finalizer {
+		private USB usb;
 		private Pointer handle;
 
-		public LibUSBOpenDeviceFinalizer(LibUSB usb, Pointer handle) {
+		public LibUSBOpenDeviceFinalizer(USB usb, Pointer handle) {
 			this.handle = handle;
 			this.usb = usb;
 		}
@@ -37,21 +37,25 @@ public class LibUSBOpenDevice implements AutoCloseable, Closeable {
 		}
 	}
 
-	public String manufacturer() throws LibUSBException {
+	public String getStringDescriptionAscii(int index) throws USBException {
+		return usb.getStringDescriptionAscii(handle, (byte)index);
+	}
+	
+	public String manufacturer() throws USBException {
 		if (device.descriptor.iManufacturer == 0)
 			return null;
 
 		return usb.getStringDescriptionAscii(handle, device.descriptor.iManufacturer);
 	}
 
-	public String product() throws LibUSBException {
+	public String product() throws USBException {
 		if (device.descriptor.iProduct == 0)
 			return null;
 
 		return usb.getStringDescriptionAscii(handle, device.descriptor.iProduct);
 	}
 
-	public String serialNumber() throws LibUSBException {
+	public String serialNumber() throws USBException {
 		if (device.descriptor.iSerialNumber == 0)
 			return null;
 

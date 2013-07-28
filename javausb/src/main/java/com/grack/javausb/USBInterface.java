@@ -1,4 +1,4 @@
-package com.grack.libusb;
+package com.grack.javausb;
 
 import java.util.Arrays;
 import java.util.List;
@@ -6,15 +6,15 @@ import java.util.List;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.grack.libusb.jna.libusb_interface;
-import com.grack.libusb.jna.libusb_interface_descriptor;
+import com.grack.javausb.jna.libusb_interface;
+import com.grack.javausb.jna.libusb_interface_descriptor;
 
-public class LibUSBInterface {
+public class USBInterface {
 	private libusb_interface iface;
-	private LibUSBDevice device;
-	private ImmutableList<LibUSBInterfaceDescriptor> altSettings;
+	private USBDevice device;
+	private ImmutableList<USBInterfaceDescriptor> altSettings;
 
-	LibUSBInterface(final LibUSBDevice device, libusb_interface iface) {
+	USBInterface(final USBDevice device, libusb_interface iface) {
 		this.device = device;
 		this.iface = iface;
 
@@ -25,9 +25,9 @@ public class LibUSBInterface {
 			List<libusb_interface_descriptor> altsettings = Arrays.asList(iface.altsetting.toArray(numAltSettings()));
 
 			altSettings = ImmutableList.copyOf(Lists.transform(altsettings,
-					new Function<libusb_interface_descriptor, LibUSBInterfaceDescriptor>() {
-						public LibUSBInterfaceDescriptor apply(libusb_interface_descriptor input) {
-							return new LibUSBInterfaceDescriptor(device, input);
+					new Function<libusb_interface_descriptor, USBInterfaceDescriptor>() {
+						public USBInterfaceDescriptor apply(libusb_interface_descriptor input) {
+							return new USBInterfaceDescriptor(device, input);
 						}
 					}));
 		}
@@ -37,7 +37,7 @@ public class LibUSBInterface {
 		return this.iface.num_altsetting;
 	}
 
-	public Iterable<LibUSBInterfaceDescriptor> altSettings() {
+	public Iterable<USBInterfaceDescriptor> altSettings() {
 		return altSettings;
 	}
 

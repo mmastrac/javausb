@@ -1,4 +1,6 @@
-jna-libusb
-==========
+javausb
+=======
 
-Java JNA bindings for libusb
+Java USB library.
+
+

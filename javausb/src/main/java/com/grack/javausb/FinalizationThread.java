@@ -1,4 +1,4 @@
-package com.grack.libusb;
+package com.grack.javausb;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
@@ -10,8 +10,8 @@ import com.google.common.collect.Sets;
 /**
  * Manages cleanup for native LibUSB objects.
  */
-class LibUSBFinalizationThread {
-	private static final Logger logger = Logger.getLogger(LibUSBFinalizationThread.class.getName());
+class FinalizationThread {
+	private static final Logger logger = Logger.getLogger(FinalizationThread.class.getName());
 
 	/**
 	 * The {@link ReferenceQueue} on which the {@link PhantomReference}s are
@@ -23,14 +23,14 @@ class LibUSBFinalizationThread {
 	 * Ensure that the {@link PhantomReference}s don't get GC'd before they can
 	 * be enqueued.
 	 */
-	private HashSet<LibUSBFinalizerReference> finalizers = Sets.newHashSet();
+	private HashSet<FinalizerReference> finalizers = Sets.newHashSet();
 
 	/**
 	 * Our {@link ReferenceQueue} tracking thread.
 	 */
 	private Thread thread;
 	
-	public LibUSBFinalizationThread() {
+	public FinalizationThread() {
 	}
 
 	public void start() {
@@ -45,15 +45,15 @@ class LibUSBFinalizationThread {
 		thread.start();
 	}
 
-	public LibUSBFinalizerReference track(Object referent, LibUSBFinalizer finalizer) {
-		LibUSBFinalizerReference ref = new LibUSBFinalizerReference(referent, references, finalizer);
+	public FinalizerReference track(Object referent, Finalizer finalizer) {
+		FinalizerReference ref = new FinalizerReference(referent, references, finalizer);
 		synchronized (finalizers) {
 			finalizers.add(ref);
 		}
 		return ref;
 	}
 
-	public void force(LibUSBFinalizerReference finalizer) {
+	public void force(FinalizerReference finalizer) {
 		synchronized (finalizers) {
 			if (!finalizers.remove(finalizer)) {
 				logger.severe("Double-finalization attempted, bug");
@@ -68,7 +68,7 @@ class LibUSBFinalizationThread {
 	private void go() {
 		while (true) {
 			try {
-				LibUSBFinalizerReference ref = (LibUSBFinalizerReference) references.remove();
+				FinalizerReference ref = (FinalizerReference) references.remove();
 				ref.getFinalizer().cleanup();
 				ref.clear();
 				synchronized (finalizers) {

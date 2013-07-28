@@ -1,4 +1,4 @@
-package com.grack.libusb.jna;
+package com.grack.javausb.jna;
 
 import java.util.List;
 

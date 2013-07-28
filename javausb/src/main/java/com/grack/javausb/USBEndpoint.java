@@ -1,11 +1,11 @@
-package com.grack.libusb;
+package com.grack.javausb;
 
-import com.grack.libusb.jna.libusb_endpoint_descriptor;
+import com.grack.javausb.jna.libusb_endpoint_descriptor;
 
-public class LibUSBEndpoint {
+public class USBEndpoint {
 	private libusb_endpoint_descriptor descriptor;
 
-	public LibUSBEndpoint(libusb_endpoint_descriptor descriptor) {
+	public USBEndpoint(libusb_endpoint_descriptor descriptor) {
 		this.descriptor = descriptor;
 	}
 	
