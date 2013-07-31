@@ -1,8 +1,11 @@
 package com.grack.javausb;
 
 import java.io.Closeable;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.logging.Logger;
 
+import com.google.common.base.Preconditions;
 import com.sun.jna.Pointer;
 
 public class USBOpenDevice implements AutoCloseable, Closeable {
@@ -62,6 +65,16 @@ public class USBOpenDevice implements AutoCloseable, Closeable {
 		return usb.getStringDescriptionAscii(handle, device.descriptor.iSerialNumber);
 	}
 
+	public InputStream openBulkReadEndpoint(USBEndpoint endpoint) {
+		Preconditions.checkArgument(endpoint.direction() == USBEndpointDirection.IN);
+		return new USBBulkEndpointInputStream(usb, handle, endpoint.address());
+	}
+
+	public OutputStream openBulkWriteEndpoint(USBEndpoint endpoint) {
+		Preconditions.checkArgument(endpoint.direction() == USBEndpointDirection.OUT);
+		return new USBBulkEndpointOutputStream(usb, handle, endpoint.address());
+	}
+	
 	@Override
 	public synchronized void close() {
 		if (finalizer != null) {
@@ -70,5 +83,23 @@ public class USBOpenDevice implements AutoCloseable, Closeable {
 			handle = null;
 			usb = null;
 		}
+	}
+
+	public void activate(USBConfiguration config) throws USBException {
+		usb.activate(handle, config.number());
+	}
+
+	public void claim(USBInterface config) throws USBException {
+		usb.claimInterface(handle, config.number());
+	}
+	
+	public int sendControlTransfer(int requestType, byte request, int value, int index, byte[] buffer)
+			throws USBException {
+		return sendControlTransfer(requestType, request, value, index, buffer, 0, buffer.length);
+	}
+
+	public int sendControlTransfer(int requestType, byte request, int value, int index, byte[] buffer, int offset, int length)
+			throws USBException {
+		return usb.sendControlTransfer(handle, requestType, request, value, index, buffer, offset, length);
 	}
 }

@@ -1,8 +1,11 @@
 package com.grack.javausb.jna;
 
+import java.nio.ByteBuffer;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
 public interface LibUSBXNative extends Library {
@@ -40,8 +43,27 @@ public interface LibUSBXNative extends Library {
 	// config_index, struct libusb_config_descriptor **config);
 	int libusb_get_config_descriptor(Pointer dev, int config_index, PointerByReference config);
 
-	// void LIBUSB_CALL libusb_free_config_descriptor( struct libusb_config_descriptor *config);
+	// void LIBUSB_CALL libusb_free_config_descriptor( struct
+	// libusb_config_descriptor *config);
 	void libusb_free_config_descriptor(Pointer config);
+
+	// int LIBUSB_CALL libusb_set_configuration(libusb_device_handle *dev, int configuration);
+	int libusb_set_configuration(Pointer handle, int configuration);
+
+	// int LIBUSB_CALL libusb_claim_interface(libusb_device_handle *dev, int interface_number);
+	int libusb_claim_interface(Pointer handle, int interface_number);
+	
+	// int LIBUSB_CALL libusb_control_transfer(libusb_device_handle *dev_handle,
+	// uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex,
+	// unsigned char *data, uint16_t wLength, unsigned int timeout);
+	int libusb_control_transfer(Pointer dev_handle, byte bmRequestType, byte bRequest, short wValue, short wIndex, ByteBuffer data,
+			short wLength, int timeout);
+
+	// int LIBUSB_CALL libusb_bulk_transfer ( struct libusb_device_handle *
+	// dev_handle, unsigned char endpoint, unsigned char * data, int length, int *
+	// transferred, unsigned int timeout)
+	int libusb_bulk_transfer(Pointer handle, byte endpoint, ByteBuffer data, int length, IntByReference transferred, int timeout);
+	int libusb_bulk_transfer(Pointer handle, byte endpoint, byte[] data, int length, IntByReference transferred, int timeout);
 
 	// void LIBUSB_CALL libusb_close(libusb_device_handle *dev_handle);
 	void libusb_close(Pointer handle);

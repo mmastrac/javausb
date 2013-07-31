@@ -13,6 +13,7 @@ public class USBInterface {
 	private libusb_interface iface;
 	private USBDevice device;
 	private ImmutableList<USBInterfaceDescriptor> altSettings;
+	private USBInterfaceDescriptor first;
 
 	USBInterface(final USBDevice device, libusb_interface iface) {
 		this.device = device;
@@ -31,6 +32,8 @@ public class USBInterface {
 						}
 					}));
 		}
+		
+		first = altSettings.size() == 0 ? null : altSettings.get(0);
 	}
 
 	public int numAltSettings() {
@@ -41,11 +44,20 @@ public class USBInterface {
 		return altSettings;
 	}
 
+	public int number() {
+		if (first == null)
+			// Unexpected
+			throw new IllegalStateException("No alternate settings");
+	
+		return first.descriptor.bInterfaceNumber;	
+	}
+
 	@Override
 	public String toString() {
 		// The interface number is actually available in the altsettings -
 		// libusb oddity. If for some reason altSessings is empty, just display
 		// (?) instead.
-		return "Interface #" + (altSettings.size() == 0 ? "(?)" : altSettings.get(0).descriptor.bInterfaceNumber) + " for " + device;
+		return "Interface #" + (first == null ? "(?)" : first.descriptor.bInterfaceNumber) + " for " + device;
 	}
+
 }

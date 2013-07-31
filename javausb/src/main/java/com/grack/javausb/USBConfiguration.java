@@ -65,8 +65,12 @@ public class USBConfiguration {
 		return interfaces;
 	}
 
+	public int number() {
+		return descriptor.bConfigurationValue;
+	}
+
 	@Override
 	public String toString() {
-		return "Configuration #" + descriptor.bConfigurationValue + " for " + device;
+		return "Configuration #" + number()  + " for " + device;
 	}
 }

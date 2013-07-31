@@ -1,5 +1,6 @@
 package com.grack.javausb;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -13,6 +14,7 @@ import com.grack.javausb.jna.libusb_config_descriptor;
 import com.grack.javausb.jna.libusb_device_descriptor;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
 public class USB {
@@ -21,15 +23,15 @@ public class USB {
 	private FinalizationThread finalizationThread;
 
 	private static final Logger logger = Logger.getLogger(USB.class.getName());
-	
+
 	public USB() throws USBException {
 		this.ctx = openLibrary();
-		// USB.libusb_set_debug(ctx, 4);
-		
+		USB.libusb_set_debug(ctx, 4);
+
 		finalizationThread = new FinalizationThread();
 		finalizationThread.start();
 		finalizationThread.track(this, new LibUSBCleanupFinalizer(openLibrary()));
-		
+
 		logger.info("Initialized LibUSB JNA wrapper");
 	}
 
@@ -130,9 +132,44 @@ public class USB {
 		USB.libusb_free_config_descriptor(descriptor.getPointer());
 	}
 
-	
-//	<T> ImmutableList<T> structArrayToImmutableList(Pointer ptr) {
-//		Structure.autoRead(ss)
-//		return ImmutableList.copyOf(elements);
-//	}
+	public int bulkRead(Pointer handle, int endpoint, byte[] b, int off, int len) throws USBException {
+		IntByReference transferred = new IntByReference();
+		if (off == 0) {
+			nativeCall(USB.libusb_bulk_transfer(handle, (byte) endpoint, b, len, transferred, 1000));
+		} else {
+			ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
+			nativeCall(USB.libusb_bulk_transfer(handle, (byte) endpoint, buffer, len, transferred, 1000));
+		}
+		return transferred.getValue();
+	}
+
+	public int bulkWrite(Pointer handle, int endpoint, byte[] b, int off, int len) throws USBException {
+		IntByReference transferred = new IntByReference(len);
+		if (off == 0) {
+			nativeCall(USB.libusb_bulk_transfer(handle, (byte) endpoint, b, len, transferred, 1000));
+		} else {
+			ByteBuffer buffer = ByteBuffer.wrap(b, off, len);
+			nativeCall(USB.libusb_bulk_transfer(handle, (byte) endpoint, buffer, len, transferred, 1000));
+		}
+		return transferred.getValue();
+	}
+
+	public void claimInterface(Pointer handle, int iface) throws USBException {
+		nativeCall(USB.libusb_claim_interface(handle, iface));
+	}
+
+	public void activate(Pointer handle, int configuration) throws USBException {
+		nativeCall(USB.libusb_set_configuration(handle, configuration));
+	}
+
+	public int sendControlTransfer(Pointer handle, int requestType, int request, int value, int index, byte[] buffer, int off, int len)
+			throws USBException {
+		return nativeCall(USB.libusb_control_transfer(handle, (byte) requestType, (byte) request, (short) value, (short) index,
+				ByteBuffer.wrap(buffer, off, len), (short) len, 1000));
+	}
+
+	// <T> ImmutableList<T> structArrayToImmutableList(Pointer ptr) {
+	// Structure.autoRead(ss)
+	// return ImmutableList.copyOf(elements);
+	// }
 }
