@@ -6,12 +6,10 @@ import java.io.OutputStream;
 import com.sun.jna.Pointer;
 
 public class USBBulkEndpointOutputStream extends OutputStream {
-	private USB usb;
 	private Pointer handle;
 	private int endpoint;
 
-	USBBulkEndpointOutputStream(USB usb, Pointer handle, int endpoint) {
-		this.usb = usb;
+	USBBulkEndpointOutputStream(Pointer handle, int endpoint) {
 		this.handle = handle;
 		this.endpoint = endpoint;
 	}
@@ -28,7 +26,7 @@ public class USBBulkEndpointOutputStream extends OutputStream {
 
 	public void write(byte[] b, int off, int len) throws IOException {
 		try {
-			usb.bulkWrite(handle, endpoint, b, off, len);
+			USBNative.bulkTransfer(handle, endpoint, b, off, len);
 		} catch (USBException e) {
 			throw new IOException(e);
 		}

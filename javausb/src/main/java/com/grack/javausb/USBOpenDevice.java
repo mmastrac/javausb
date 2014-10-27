@@ -21,58 +21,56 @@ public class USBOpenDevice implements AutoCloseable, Closeable {
 		this.device = device;
 		this.handle = handle;
 		
-		finalizer = usb.trackFinalizer(this, new LibUSBOpenDeviceFinalizer(usb, handle));
+		finalizer = usb.trackFinalizer(this, new LibUSBOpenDeviceFinalizer(handle));
 	}
 
 	private static class LibUSBOpenDeviceFinalizer implements Finalizer {
-		private USB usb;
 		private Pointer handle;
 
-		public LibUSBOpenDeviceFinalizer(USB usb, Pointer handle) {
+		public LibUSBOpenDeviceFinalizer(Pointer handle) {
 			this.handle = handle;
-			this.usb = usb;
 		}
 
 		@Override
 		public void cleanup() {
 			logger.info("Cleanup: open device");
-			usb.closeDevice(handle);
+			USBNative.closeDevice(handle);
 		}
 	}
 
 	public String getStringDescriptionAscii(int index) throws USBException {
-		return usb.getStringDescriptionAscii(handle, (byte)index);
+		return USBNative.getStringDescriptionAscii(handle, (byte)index);
 	}
 	
 	public String manufacturer() throws USBException {
 		if (device.descriptor.iManufacturer == 0)
 			return null;
 
-		return usb.getStringDescriptionAscii(handle, device.descriptor.iManufacturer);
+		return USBNative.getStringDescriptionAscii(handle, device.descriptor.iManufacturer);
 	}
 
 	public String product() throws USBException {
 		if (device.descriptor.iProduct == 0)
 			return null;
 
-		return usb.getStringDescriptionAscii(handle, device.descriptor.iProduct);
+		return USBNative.getStringDescriptionAscii(handle, device.descriptor.iProduct);
 	}
 
 	public String serialNumber() throws USBException {
 		if (device.descriptor.iSerialNumber == 0)
 			return null;
 
-		return usb.getStringDescriptionAscii(handle, device.descriptor.iSerialNumber);
+		return USBNative.getStringDescriptionAscii(handle, device.descriptor.iSerialNumber);
 	}
 
 	public InputStream openBulkReadEndpoint(USBEndpoint endpoint) {
 		Preconditions.checkArgument(endpoint.direction() == USBEndpointDirection.IN);
-		return new USBBulkEndpointInputStream(usb, handle, endpoint.address());
+		return new USBBulkEndpointInputStream(handle, endpoint.address());
 	}
 
 	public OutputStream openBulkWriteEndpoint(USBEndpoint endpoint) {
 		Preconditions.checkArgument(endpoint.direction() == USBEndpointDirection.OUT);
-		return new USBBulkEndpointOutputStream(usb, handle, endpoint.address());
+		return new USBBulkEndpointOutputStream(handle, endpoint.address());
 	}
 	
 	@Override
@@ -86,11 +84,11 @@ public class USBOpenDevice implements AutoCloseable, Closeable {
 	}
 
 	public void activate(USBConfiguration config) throws USBException {
-		usb.activate(handle, config.number());
+		USBNative.setConfiguration(handle, config.number());
 	}
 
 	public void claim(USBInterface config) throws USBException {
-		usb.claimInterface(handle, config.number());
+		USBNative.claimInterface(handle, config.number());
 	}
 	
 	public int sendControlTransfer(int requestType, byte request, int value, int index, byte[] buffer)
@@ -100,6 +98,6 @@ public class USBOpenDevice implements AutoCloseable, Closeable {
 
 	public int sendControlTransfer(int requestType, byte request, int value, int index, byte[] buffer, int offset, int length)
 			throws USBException {
-		return usb.sendControlTransfer(handle, requestType, request, value, index, buffer, offset, length);
+		return USBNative.sendControlTransfer(handle, requestType, request, value, index, buffer, offset, length);
 	}
 }

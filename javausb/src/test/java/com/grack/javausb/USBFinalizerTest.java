@@ -1,6 +1,9 @@
 package com.grack.javausb;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -113,11 +116,19 @@ public class USBFinalizerTest {
 						System.out.println("Activating " + config);
 						openDevice.activate(config);
 
+						USBEndpoint in = null;
+						USBEndpoint out = null;
+
 						for (USBInterface iface : config.interfaces()) {
 							System.out.println(iface);
 							openDevice.claim(iface);
 							for (USBInterfaceDescriptor ifaceDescriptor : iface.altSettings()) {
 								for (USBEndpoint endpoint : ifaceDescriptor.endpoints()) {
+									if (endpoint.direction() == USBEndpointDirection.IN) {
+										in = endpoint;
+									} else {
+										out = endpoint;
+									}
 									System.out.println(endpoint);
 								}
 							}
@@ -125,8 +136,22 @@ public class USBFinalizerTest {
 
 						System.out.println("Requesting firmware version...");
 						byte[] data = new byte[1024];
-						int n = openDevice.sendControlTransfer(0xc0, (byte)'a', 0, 0, data);
+						int n = openDevice.sendControlTransfer(0xc0, (byte) 'a', 0, 0, data);
 						System.out.println("Version: " + new String(data, 0, n, Charsets.US_ASCII));
+
+						data = new byte[1024];
+						n = openDevice.sendControlTransfer(0xc0, (byte) 'i', 0, 0, data);
+						System.out.println("Data: " + Arrays.toString(Arrays.copyOf(data, n)));
+
+						try (OutputStream os = openDevice.openBulkWriteEndpoint(out)) {
+							try (InputStream is = openDevice.openBulkReadEndpoint(in)) {
+								data = new byte[in.maxPacketSize()];
+								do {
+									n = is.read(data);
+									System.out.println(Arrays.toString(Arrays.copyOf(data, n)));
+								} while (n > 0);
+							}
+						}
 					}
 				}
 			}

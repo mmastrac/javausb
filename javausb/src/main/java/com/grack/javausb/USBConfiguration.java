@@ -34,22 +34,20 @@ public class USBConfiguration {
 			}));
 		}
 
-		usb.trackFinalizer(this, new LibUSBConfigurationFinalizer(usb, descriptor));
+		usb.trackFinalizer(this, new LibUSBConfigurationFinalizer(descriptor));
 	}
 
 	private static class LibUSBConfigurationFinalizer implements Finalizer {
 		private libusb_config_descriptor descriptor;
-		private USB usb;
 
-		public LibUSBConfigurationFinalizer(USB usb, libusb_config_descriptor descriptor) {
-			this.usb = usb;
+		public LibUSBConfigurationFinalizer(libusb_config_descriptor descriptor) {
 			this.descriptor = descriptor;
 		}
 
 		@Override
 		public void cleanup() {
 			logger.info("Cleanup: configuration descriptor");
-			usb.cleanup(descriptor);
+			USBNative.cleanup(descriptor);
 		}
 	}
 

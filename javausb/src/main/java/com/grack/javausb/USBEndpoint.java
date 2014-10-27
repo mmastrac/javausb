@@ -16,6 +16,10 @@ public class USBEndpoint {
 	public int number() {
 		return descriptor.bEndpointAddress & 7;
 	}
+	
+	public int maxPacketSize() {
+		return descriptor.wMaxPacketSize & 0xffff;
+	}
 
 	public USBEndpointDirection direction() {
 		return ((descriptor.bEndpointAddress & 0x80) == 0x80) ? USBEndpointDirection.IN : USBEndpointDirection.OUT;
@@ -31,6 +35,6 @@ public class USBEndpoint {
 	
 	@Override
 	public String toString() {
-		return direction() + " " + transferType() + " endpoint #" + number();
+		return direction() + " " + transferType() + " endpoint #" + number() + " (packet size = 0x" + Integer.toHexString(maxPacketSize()) + ")";
 	}
 }

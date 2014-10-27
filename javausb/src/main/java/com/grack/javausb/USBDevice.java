@@ -21,22 +21,20 @@ public class USBDevice {
 		this.descriptor = descriptor;
 		this.dev = dev;
 
-		usb.trackFinalizer(this, new LibUSBDeviceFinalizer(usb, dev));
+		usb.trackFinalizer(this, new LibUSBDeviceFinalizer(dev));
 	}
 
 	private static class LibUSBDeviceFinalizer implements Finalizer {
-		private USB usb;
 		private Pointer dev;
 
-		public LibUSBDeviceFinalizer(USB usb, Pointer dev) {
-			this.usb = usb;
+		public LibUSBDeviceFinalizer(Pointer dev) {
 			this.dev = dev;
 		}
 
 		@Override
 		public void cleanup() {
 			logger.info("Cleanup: device");
-			usb.unrefDevice(dev);
+			USBNative.unrefDevice(dev);
 		}
 	}
 
@@ -65,7 +63,7 @@ public class USBDevice {
 				try {
 					for (int i = 0; i < descriptor.bNumConfigurations; i++) {
 						libusb_config_descriptor descriptor;
-						descriptor = usb.getConfigDescriptor(dev, i);
+						descriptor = USBNative.getConfigDescriptor(dev, i);
 						configs.add(new USBConfiguration(usb, USBDevice.this, descriptor));
 					}
 				} catch (USBException e) {
@@ -81,7 +79,7 @@ public class USBDevice {
 	 * Opens a device.
 	 */
 	public USBOpenDevice open() throws USBException {
-		return new USBOpenDevice(usb, this, usb.openDevice(dev));
+		return new USBOpenDevice(usb, this, USBNative.openDevice(dev));
 	}
 
 	@Override

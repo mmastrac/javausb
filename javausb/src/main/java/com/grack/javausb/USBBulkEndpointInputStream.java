@@ -7,12 +7,10 @@ import java.io.InputStream;
 import com.sun.jna.Pointer;
 
 public class USBBulkEndpointInputStream extends InputStream implements AutoCloseable, Closeable {
-	private USB usb;
 	private Pointer handle;
 	private int endpoint;
 
-	USBBulkEndpointInputStream(USB usb, Pointer handle, int endpoint) {
-		this.usb = usb;
+	USBBulkEndpointInputStream(Pointer handle, int endpoint) {
 		this.handle = handle;
 		this.endpoint = endpoint;
 	}
@@ -35,7 +33,7 @@ public class USBBulkEndpointInputStream extends InputStream implements AutoClose
 	@Override
 	public int read(byte[] b, int off, int len) throws IOException {
 		try {
-			return usb.bulkRead(handle, endpoint, b, off, len);
+			return USBNative.bulkTransfer(handle, endpoint, b, off, len);
 		} catch (USBException e) {
 			if (e.getCode() == USBExceptionCode.LIBUSB_ERROR_TIMEOUT)
 				return 0;
